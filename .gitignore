@@ -1,0 +1,5 @@
+.qtcreator/
+build/
+*.exe
+*.ilk
+*.pdb
