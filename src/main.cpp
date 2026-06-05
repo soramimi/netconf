@@ -1,18 +1,17 @@
 #define _WIN32_DCOM
-#include <iostream>
-#include <vector>
-#include <string>
-#include <cstring>
-#include <windows.h>
-#include <comdef.h>
 #include <Wbemidl.h>
+#include <comdef.h>
+#include <cstring>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <windows.h>
 
 #pragma comment(lib, "wbemuuid.lib")
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "oleaut32.lib")
 
-class NetworkConfig
-{
+class NetworkConfig {
 public:
 	NetworkConfig() = default;
 
@@ -33,16 +32,15 @@ public:
 		}
 
 		hres = CoInitializeSecurity(
-			NULL,
-			-1,
-			NULL,
-			NULL,
-			RPC_C_AUTHN_LEVEL_DEFAULT,
-			RPC_C_IMP_LEVEL_IMPERSONATE,
-			NULL,
-			EOAC_NONE,
-			NULL
-		);
+					NULL,
+					-1,
+					NULL,
+					NULL,
+					RPC_C_AUTHN_LEVEL_DEFAULT,
+					RPC_C_IMP_LEVEL_IMPERSONATE,
+					NULL,
+					EOAC_NONE,
+					NULL);
 		if (FAILED(hres) && hres != RPC_E_TOO_LATE) {
 			std::cerr << "CoInitializeSecurity failed. Error code = 0x" << std::hex << hres << std::endl;
 			CoUninitialize();
@@ -50,12 +48,11 @@ public:
 		}
 
 		hres = CoCreateInstance(
-			CLSID_WbemLocator,
-			0,
-			CLSCTX_INPROC_SERVER,
-			IID_IWbemLocator,
-			(LPVOID *)&m_pLoc
-		);
+					CLSID_WbemLocator,
+					0,
+					CLSCTX_INPROC_SERVER,
+					IID_IWbemLocator,
+					(LPVOID *)&m_pLoc);
 		if (FAILED(hres)) {
 			std::cerr << "CoCreateInstance(WbemLocator) failed. Error code = 0x" << std::hex << hres << std::endl;
 			CoUninitialize();
@@ -63,15 +60,14 @@ public:
 		}
 
 		hres = m_pLoc->ConnectServer(
-			_bstr_t(L"ROOT\\CIMV2"),
-			NULL,
-			NULL,
-			0,
-			NULL,
-			0,
-			0,
-			&m_pSvc
-		);
+					_bstr_t(L"ROOT\\CIMV2"),
+					NULL,
+					NULL,
+					0,
+					NULL,
+					0,
+					0,
+					&m_pSvc);
 		if (FAILED(hres)) {
 			std::cerr << "ConnectServer failed. Error code = 0x" << std::hex << hres << std::endl;
 			m_pLoc->Release();
@@ -81,15 +77,14 @@ public:
 		}
 
 		hres = CoSetProxyBlanket(
-			m_pSvc,
-			RPC_C_AUTHN_WINNT,
-			RPC_C_AUTHZ_NONE,
-			NULL,
-			RPC_C_AUTHN_LEVEL_CALL,
-			RPC_C_IMP_LEVEL_IMPERSONATE,
-			NULL,
-			EOAC_NONE
-		);
+					m_pSvc,
+					RPC_C_AUTHN_WINNT,
+					RPC_C_AUTHZ_NONE,
+					NULL,
+					RPC_C_AUTHN_LEVEL_CALL,
+					RPC_C_IMP_LEVEL_IMPERSONATE,
+					NULL,
+					EOAC_NONE);
 		if (FAILED(hres)) {
 			std::cerr << "CoSetProxyBlanket failed. Error code = 0x" << std::hex << hres << std::endl;
 			m_pSvc->Release();
@@ -123,8 +118,7 @@ public:
 	{
 		std::wcout << L"--- Network Adapter Configuration ---" << std::endl;
 		enumerate(L"SELECT * FROM Win32_NetworkAdapterConfiguration",
-				  [&](IWbemClassObject *pclsObj)
-		{
+				  [&](IWbemClassObject *pclsObj) {
 			printProperty(pclsObj, L"Index");
 			printProperty(pclsObj, L"MACAddress");
 			printArrayProperty(pclsObj, L"IPAddress");
@@ -135,10 +129,10 @@ public:
 			std::wcout << L"-------------------------" << std::endl;
 		});
 
-		std::wcout << std::endl << L"--- Network Adapter (Connected) ---" << std::endl;
+		std::wcout << std::endl
+				   << L"--- Network Adapter (Connected) ---" << std::endl;
 		enumerate(L"SELECT * FROM Win32_NetworkAdapter",
-				  [&](IWbemClassObject *pclsObj)
-		{
+				  [&](IWbemClassObject *pclsObj) {
 			printProperty(pclsObj, L"Index");
 			printProperty(pclsObj, L"Name");
 			printProperty(pclsObj, L"ProductName");
@@ -152,13 +146,12 @@ public:
 		});
 	}
 
-	bool change_address(const std::wstring& mac, const std::wstring& ip, const std::wstring& subnet, const std::wstring& gateway)
+	bool change_address(std::wstring const &mac, std::wstring const &ip, std::wstring const &subnet, std::wstring const &gateway)
 	{
 		std::wstring query = L"SELECT * FROM Win32_NetworkAdapterConfiguration WHERE MACAddress = '" + mac + L"'";
 		bool found = false;
 
-		enumerate(query.c_str(), [&](IWbemClassObject *pclsObj)
-		{
+		enumerate(query.c_str(), [&](IWbemClassObject *pclsObj) {
 			if (found) return;
 
 			VARIANT vtPath;
@@ -195,12 +188,12 @@ private:
 	IWbemServices *m_pSvc = nullptr;
 	bool m_initialized = true;
 
-	static SAFEARRAY* createStringSafeArray(const std::vector<std::wstring>& strings)
+	static SAFEARRAY *createStringSafeArray(std::vector<std::wstring> const &strings)
 	{
 		SAFEARRAYBOUND sab;
 		sab.lLbound = 0;
 		sab.cElements = static_cast<ULONG>(strings.size());
-		SAFEARRAY* psa = SafeArrayCreate(VT_BSTR, 1, &sab);
+		SAFEARRAY *psa = SafeArrayCreate(VT_BSTR, 1, &sab);
 		if (!psa) return nullptr;
 		for (LONG i = 0; i < static_cast<LONG>(strings.size()); ++i) {
 			BSTR bstr = SysAllocString(strings[i].c_str());
@@ -211,16 +204,15 @@ private:
 	}
 
 	template <typename Func>
-	void enumerate(const wchar_t* wql, Func callback)
+	void enumerate(wchar_t const *wql, Func callback)
 	{
-		IEnumWbemClassObject* pEnumerator = nullptr;
+		IEnumWbemClassObject *pEnumerator = nullptr;
 		HRESULT hres = m_pSvc->ExecQuery(
-			bstr_t("WQL"),
-			bstr_t(wql),
-			WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-			NULL,
-			&pEnumerator
-		);
+					bstr_t("WQL"),
+					bstr_t(wql),
+					WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+					NULL,
+					&pEnumerator);
 		if (FAILED(hres)) {
 			std::cerr << "ExecQuery failed. Error code = 0x" << std::hex << hres << std::endl;
 			return;
@@ -237,12 +229,12 @@ private:
 		pEnumerator->Release();
 	}
 
-	static void printProperty(IWbemClassObject* pclsObj, const wchar_t* name)
+	static void printProperty(IWbemClassObject *pclsObj, wchar_t const *name)
 	{
 		printProperty(pclsObj, name, name);
 	}
 
-	static void printProperty(IWbemClassObject* pclsObj, const wchar_t* propName, const wchar_t* label)
+	static void printProperty(IWbemClassObject *pclsObj, wchar_t const *propName, wchar_t const *label)
 	{
 		VARIANT vtProp;
 		VariantInit(&vtProp);
@@ -300,12 +292,12 @@ private:
 		VariantClear(&vtProp);
 	}
 
-	static void printBoolProperty(IWbemClassObject* pclsObj, const wchar_t* name)
+	static void printBoolProperty(IWbemClassObject *pclsObj, wchar_t const *name)
 	{
 		printBoolProperty(pclsObj, name, name);
 	}
 
-	static void printBoolProperty(IWbemClassObject* pclsObj, const wchar_t* propName, const wchar_t* label)
+	static void printBoolProperty(IWbemClassObject *pclsObj, wchar_t const *propName, wchar_t const *label)
 	{
 		VARIANT vtProp;
 		VariantInit(&vtProp);
@@ -316,7 +308,7 @@ private:
 		VariantClear(&vtProp);
 	}
 
-	static void printArrayProperty(IWbemClassObject* pclsObj, const wchar_t* name)
+	static void printArrayProperty(IWbemClassObject *pclsObj, wchar_t const *name)
 	{
 		VARIANT vtProp;
 		VariantInit(&vtProp);
@@ -324,7 +316,7 @@ private:
 		if (SUCCEEDED(hr) && (vtProp.vt & VT_ARRAY)) {
 			SAFEARRAY *pArray = vtProp.parray;
 			BSTR *pBstr;
-			SafeArrayAccessData(pArray, (void**)&pBstr);
+			SafeArrayAccessData(pArray, (void **)&pBstr);
 			LONG lLower, lUpper;
 			SafeArrayGetLBound(pArray, 1, &lLower);
 			SafeArrayGetUBound(pArray, 1, &lUpper);
@@ -336,7 +328,7 @@ private:
 		VariantClear(&vtProp);
 	}
 
-	static void printProperty64(IWbemClassObject* pclsObj, const wchar_t* name)
+	static void printProperty64(IWbemClassObject *pclsObj, wchar_t const *name)
 	{
 		VARIANT vtProp;
 		VariantInit(&vtProp);
@@ -351,34 +343,37 @@ private:
 		VariantClear(&vtProp);
 	}
 
-	static HRESULT extractReturnValue(IWbemClassObject* pOutParams)
+	static HRESULT extractReturnValue(IWbemClassObject *pOutParams)
 	{
 		VARIANT ret;
 		VariantInit(&ret);
 		HRESULT hr = pOutParams->Get(L"ReturnValue", 0, &ret, NULL, 0);
 		if (SUCCEEDED(hr)) {
 			ULONG rv = 0;
-			if (ret.vt == VT_UI4) rv = ret.ulVal;
-			else if (ret.vt == VT_I4) rv = static_cast<ULONG>(ret.lVal);
-			else rv = 1;
+			if (ret.vt == VT_UI4)
+				rv = ret.ulVal;
+			else if (ret.vt == VT_I4)
+				rv = static_cast<ULONG>(ret.lVal);
+			else
+				rv = 1;
 			if (rv != 0) hr = HRESULT_FROM_WIN32(rv);
 		}
 		VariantClear(&ret);
 		return hr;
 	}
 
-	HRESULT callEnableStatic(BSTR objPath, const std::wstring& ip, const std::wstring& subnet)
+	HRESULT callEnableStatic(BSTR objPath, std::wstring const &ip, std::wstring const &subnet)
 	{
-		IWbemClassObject* pClass = nullptr;
+		IWbemClassObject *pClass = nullptr;
 		HRESULT hr = m_pSvc->GetObject(bstr_t("Win32_NetworkAdapterConfiguration"), 0, NULL, &pClass, NULL);
 		if (FAILED(hr)) return hr;
 
-		IWbemClassObject* pInParamsDef = nullptr;
+		IWbemClassObject *pInParamsDef = nullptr;
 		hr = pClass->GetMethod(L"EnableStatic", 0, &pInParamsDef, NULL);
 		pClass->Release();
 		if (FAILED(hr)) return hr;
 
-		IWbemClassObject* pInParams = nullptr;
+		IWbemClassObject *pInParams = nullptr;
 		hr = pInParamsDef->SpawnInstance(0, &pInParams);
 		pInParamsDef->Release();
 		if (FAILED(hr)) return hr;
@@ -391,7 +386,10 @@ private:
 			var.parray = createStringSafeArray(v);
 			hr = pInParams->Put(L"IPAddress", 0, &var, 0);
 			VariantClear(&var);
-			if (FAILED(hr)) { pInParams->Release(); return hr; }
+			if (FAILED(hr)) {
+				pInParams->Release();
+				return hr;
+			}
 		}
 
 		{
@@ -402,10 +400,13 @@ private:
 			var.parray = createStringSafeArray(v);
 			hr = pInParams->Put(L"SubnetMask", 0, &var, 0);
 			VariantClear(&var);
-			if (FAILED(hr)) { pInParams->Release(); return hr; }
+			if (FAILED(hr)) {
+				pInParams->Release();
+				return hr;
+			}
 		}
 
-		IWbemClassObject* pOutParams = nullptr;
+		IWbemClassObject *pOutParams = nullptr;
 		hr = m_pSvc->ExecMethod(objPath, bstr_t("EnableStatic"), 0, NULL, pInParams, &pOutParams, NULL);
 		pInParams->Release();
 
@@ -416,18 +417,18 @@ private:
 		return hr;
 	}
 
-	HRESULT callSetGateways(BSTR objPath, const std::wstring& gateway)
+	HRESULT callSetGateways(BSTR objPath, std::wstring const &gateway)
 	{
-		IWbemClassObject* pClass = nullptr;
+		IWbemClassObject *pClass = nullptr;
 		HRESULT hr = m_pSvc->GetObject(bstr_t("Win32_NetworkAdapterConfiguration"), 0, NULL, &pClass, NULL);
 		if (FAILED(hr)) return hr;
 
-		IWbemClassObject* pInParamsDef = nullptr;
+		IWbemClassObject *pInParamsDef = nullptr;
 		hr = pClass->GetMethod(L"SetGateways", 0, &pInParamsDef, NULL);
 		pClass->Release();
 		if (FAILED(hr)) return hr;
 
-		IWbemClassObject* pInParams = nullptr;
+		IWbemClassObject *pInParams = nullptr;
 		hr = pInParamsDef->SpawnInstance(0, &pInParams);
 		pInParamsDef->Release();
 		if (FAILED(hr)) return hr;
@@ -440,10 +441,13 @@ private:
 			var.parray = createStringSafeArray(v);
 			hr = pInParams->Put(L"DefaultIPGateway", 0, &var, 0);
 			VariantClear(&var);
-			if (FAILED(hr)) { pInParams->Release(); return hr; }
+			if (FAILED(hr)) {
+				pInParams->Release();
+				return hr;
+			}
 		}
 
-		IWbemClassObject* pOutParams = nullptr;
+		IWbemClassObject *pOutParams = nullptr;
 		hr = m_pSvc->ExecMethod(objPath, bstr_t("SetGateways"), 0, NULL, pInParams, &pOutParams, NULL);
 		pInParams->Release();
 
@@ -454,7 +458,7 @@ private:
 		return hr;
 	}
 
-	static void reportMethodError(HRESULT hr, const wchar_t* methodName)
+	static void reportMethodError(HRESULT hr, wchar_t const *methodName)
 	{
 		std::wcerr << methodName << L" failed. Error code = 0x" << std::hex << hr << std::endl;
 		if (hr == E_ACCESSDENIED) {
@@ -478,7 +482,7 @@ int main2()
 
 // --- main (IPアドレス変更) ---
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	NetworkConfig nc;
 	if (!nc.open()) {
