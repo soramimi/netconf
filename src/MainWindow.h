@@ -10,17 +10,24 @@ namespace Ui {
 class MainWindow;
 }
 
+class QTableWidgetItem;
+
 class MainWindow : public QMainWindow {
 	Q_OBJECT
 private:
 	Ui::MainWindow *ui;
-	std::shared_ptr<Win32NetworkConfig> nc_;
+
+	struct Private;
+	Private *m;
+
 
 public:
 	explicit MainWindow(QWidget *parent = nullptr);
 	~MainWindow();
 
 	void show();
+private slots:
+	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 };
 
 #endif // MAINWINDOW_H

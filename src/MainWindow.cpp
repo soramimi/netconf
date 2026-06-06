@@ -1,15 +1,23 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "Win32NetworkConfig.h"
+#include "InterfaceCongifDialog.h"
 
 #include <QMessageBox>
+
+struct MainWindow::Private {
+	std::shared_ptr<Win32NetworkConfig> netconfig;
+	std::map<std::wstring, Win32NetworkConfig::AdapterConfiguration> configurations;
+	std::vector<Win32NetworkConfig::MsftNetAdapter> adapters;
+};
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
 	, ui(new Ui::MainWindow)
-	, nc_(std::make_shared<Win32NetworkConfig>())
+	, m(new Private)
 {
 	ui->setupUi(this);
+	m->netconfig = std::make_shared<Win32NetworkConfig>();
 }
 
 MainWindow::~MainWindow()
@@ -21,7 +29,7 @@ void MainWindow::show()
 {
 	QMainWindow::show();
 
-	if (!nc_->open()) {
+	if (!m->netconfig->open()) {
 		QMessageBox::critical(this, "Error", "Failed to open network configuration.");
 	}
 
@@ -41,9 +49,9 @@ void MainWindow::show()
 	ui->tableWidget->setColumnCount(columns.size());
 	ui->tableWidget->setHorizontalHeaderLabels(columns);
 
-	std::map<std::wstring, Win32NetworkConfig::AdapterConfiguration> configurations = nc_->query_Win32_NetworkAdapterConfiguration();
-	std::vector<Win32NetworkConfig::MsftNetAdapter> adapters = nc_->query_MSFT_NetAdapter(configurations);
-	std::sort(adapters.begin(), adapters.end(), [](const Win32NetworkConfig::MsftNetAdapter &a, const Win32NetworkConfig::MsftNetAdapter &b) {
+	m->configurations = m->netconfig->query_Win32_NetworkAdapterConfiguration();
+	m->adapters = m->netconfig->query_MSFT_NetAdapter(m->configurations);
+	std::sort(m->adapters.begin(), m->adapters.end(), [](const Win32NetworkConfig::MsftNetAdapter &a, const Win32NetworkConfig::MsftNetAdapter &b) {
 		return a.name < b.name;
 	});
 
@@ -56,9 +64,9 @@ void MainWindow::show()
 		return result;
 	};
 
-	ui->tableWidget->setRowCount(static_cast<int>(adapters.size()));
-	for (size_t i = 0; i < adapters.size(); ++i) {
-		const auto &adapter = adapters[i];
+	ui->tableWidget->setRowCount(static_cast<int>(m->adapters.size()));
+	for (size_t i = 0; i < m->adapters.size(); ++i) {
+		const auto &adapter = m->adapters[i];
 		const auto &config = adapter.configuration;
 
 		int col = 0;
@@ -81,3 +89,39 @@ void MainWindow::show()
 	ui->tableWidget->resizeColumnsToContents();
 	ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 }
+
+void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
+{
+	InterfaceCongifDialog::Config config;
+	int row = item->row();
+	const auto &adapter = m->adapters[row];
+	config.obtain_an_ipaddress_automatically = adapter.configuration.dhcpEnabled;
+	if (!adapter.configuration.ipAddresses.empty()) {
+		config.ip_address = QString::fromStdWString(adapter.configuration.ipAddresses[0]);
+	}
+	if (!adapter.configuration.subnets.empty()) {
+		config.subnet_mask = QString::fromStdWString(adapter.configuration.subnets[0]);
+	}
+	if (!adapter.configuration.defaultGateways.empty()) {
+		config.default_gateway = QString::fromStdWString(adapter.configuration.defaultGateways[0]);
+	}
+
+	InterfaceCongifDialog dlg(config, this);
+	if (dlg.exec() == QDialog::Accepted) {
+		const auto &new_config = dlg.config();
+		std::wstring mac = adapter.configuration.macAddress;
+		std::wstring ip = new_config.ip_address.toStdWString();
+		std::wstring subnet = new_config.subnet_mask.toStdWString();
+		std::wstring gateway = new_config.default_gateway.toStdWString();
+
+		bool success = m->netconfig->change_address(mac, ip, subnet, gateway);
+		if (!success) {
+			QMessageBox::critical(this, "Error", "Failed to change IP address.");
+		} else {
+			QMessageBox::information(this, "Success", "IP address changed successfully.");
+			show();
+		}
+	}
+
+}
+

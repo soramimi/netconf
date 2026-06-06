@@ -41,6 +41,11 @@ public:
 		bool hasConfiguration = false;
 	};
 
+	struct DnsConfig {
+		std::wstring preferredDnsServer;
+		std::wstring alternateDnsServer;
+	};
+
 private:
 	struct Private;
 	Private *m;

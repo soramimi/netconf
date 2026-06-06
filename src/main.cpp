@@ -45,11 +45,11 @@ int main2()
 
 int main(int argc, char *argv[])
 {
-	HRESULT hres = CoInitializeEx(0, COINIT_MULTITHREADED);
-	if (!SUCCEEDED(hres)) {
-		std::cerr << "Failed to initialize COM library. Error code = 0x" << std::hex << hres << std::endl;
-		return 1;
-	}
+	// HRESULT hres = CoInitializeEx(0, 0);
+	// if (!SUCCEEDED(hres)) {
+	// 	std::cerr << "Failed to initialize COM library. Error code = 0x" << std::hex << hres << std::endl;
+	// 	return 1;
+	// }
 
 	setupOutputLocale();
 
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 	w.show();
 	int ret = a.exec();
 
-	CoUninitialize();
+	// CoUninitialize();
 
 	return ret;
 }
