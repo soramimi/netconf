@@ -324,6 +324,7 @@ struct Win32NetworkConfig::Private {
 	static SAFEARRAY *createStringSafeArray(std::vector<std::wstring> const &strings);
 	HRESULT callEnableStatic(BSTR objPath, std::wstring const &ip, std::wstring const &subnet);
 	HRESULT callSetGateways(BSTR objPath, std::wstring const &gateway);
+	HRESULT callSetDNSServerSearchOrder(BSTR objPath, std::vector<std::wstring> const &servers);
 
 	template <typename Func> void enumerate(IWbemServices *service, wchar_t const *wql, Func callback)
 	{
@@ -503,6 +504,50 @@ HRESULT Win32NetworkConfig::Private::callSetGateways(BSTR objPath, std::wstring 
 	return hr;
 }
 
+HRESULT Win32NetworkConfig::Private::callSetDNSServerSearchOrder(BSTR objPath, std::vector<std::wstring> const &servers)
+{
+	IWbemClassObject *pClass = nullptr;
+	HRESULT hr = pSvc->GetObject(bstr_t("Win32_NetworkAdapterConfiguration"), 0, NULL, &pClass, NULL);
+	if (FAILED(hr)) return hr;
+
+	IWbemClassObject *pInParamsDef = nullptr;
+	hr = pClass->GetMethod(L"SetDNSServerSearchOrder", 0, &pInParamsDef, NULL);
+	pClass->Release();
+	if (FAILED(hr)) return hr;
+
+	IWbemClassObject *pInParams = nullptr;
+	hr = pInParamsDef->SpawnInstance(0, &pInParams);
+	pInParamsDef->Release();
+	if (FAILED(hr)) return hr;
+
+	{
+		VARIANT var;
+		VariantInit(&var);
+		if (servers.empty()) {
+			var.vt = VT_NULL;
+		} else {
+			var.vt = VT_ARRAY | VT_BSTR;
+			var.parray = createStringSafeArray(servers);
+		}
+		hr = pInParams->Put(L"DNSServerSearchOrder", 0, &var, 0);
+		VariantClear(&var);
+		if (FAILED(hr)) {
+			pInParams->Release();
+			return hr;
+		}
+	}
+
+	IWbemClassObject *pOutParams = nullptr;
+	hr = pSvc->ExecMethod(objPath, bstr_t("SetDNSServerSearchOrder"), 0, NULL, pInParams, &pOutParams, NULL);
+	pInParams->Release();
+
+	if (SUCCEEDED(hr) && pOutParams) {
+		hr = extractReturnValue(pOutParams);
+		pOutParams->Release();
+	}
+	return hr;
+}
+
 // Win32NetworkConfig
 
 Win32NetworkConfig::Win32NetworkConfig()
@@ -634,6 +679,7 @@ std::vector<Win32NetworkConfig::MsftNetAdapter> Win32NetworkConfig::query_MSFT_N
 Win32NetworkConfig::DnsConfig Win32NetworkConfig::query_DNS_server(AdapterConfiguration const &configuration) const
 {
 	DnsConfig dns;
+	dns.obtainAutomatically = configuration.dnsServers.empty();
 	if (!configuration.dnsServers.empty()) {
 		dns.ipv4.preferredDnsServer = configuration.dnsServers[0];
 	}
@@ -688,6 +734,47 @@ bool Win32NetworkConfig::change_address(std::wstring const &mac, std::wstring co
 
 	if (!found) {
 		std::wcerr << L"Adapter with MAC address " << mac << L" not found or configuration failed." << std::endl;
+	}
+	return found;
+}
+
+bool Win32NetworkConfig::change_DNS_server(std::wstring const &mac, DnsConfig const &dns)
+{
+	std::wstring query = L"SELECT * FROM Win32_NetworkAdapterConfiguration WHERE MACAddress = '" + mac + L"'";
+	bool found = false;
+
+	m->enumerate(query.c_str(), [&](IWbemClassObject *pclsObj) {
+		if (found) return;
+
+		VARIANT vtPath;
+		VariantInit(&vtPath);
+		HRESULT hr = pclsObj->Get(L"__PATH", 0, &vtPath, 0, 0);
+		if (SUCCEEDED(hr) && vtPath.vt == VT_BSTR) {
+			BSTR objPath = SysAllocString(vtPath.bstrVal);
+
+			std::vector<std::wstring> servers;
+			if (!dns.obtainAutomatically) {
+				if (!dns.ipv4.preferredDnsServer.empty()) {
+					servers.push_back(dns.ipv4.preferredDnsServer);
+				}
+				if (!dns.ipv4.alternateDnsServer.empty()) {
+					servers.push_back(dns.ipv4.alternateDnsServer);
+				}
+			}
+
+			hr = m->callSetDNSServerSearchOrder(objPath, servers);
+			if (SUCCEEDED(hr)) {
+				found = true;
+			} else {
+				reportMethodError(hr, L"SetDNSServerSearchOrder");
+			}
+			SysFreeString(objPath);
+		}
+		VariantClear(&vtPath);
+	});
+
+	if (!found) {
+		std::wcerr << L"Adapter with MAC address " << mac << L" not found or DNS configuration failed." << std::endl;
 	}
 	return found;
 }

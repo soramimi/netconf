@@ -42,6 +42,7 @@ public:
 	};
 
 	struct DnsConfig {
+		bool obtainAutomatically = true;
 		struct {
 			std::wstring preferredDnsServer;
 			std::wstring alternateDnsServer;
@@ -62,6 +63,7 @@ public:
 	DnsConfig query_DNS_server(AdapterConfiguration const &configuration) const;
 	void list_interfaces();
 	bool change_address(std::wstring const &mac, std::wstring const &ip, std::wstring const &subnet, std::wstring const &gateway);
+	bool change_DNS_server(std::wstring const &mac, DnsConfig const &dns);
 };
 
 #endif // WIN32NETWORKCONFIG_H

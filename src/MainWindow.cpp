@@ -123,7 +123,7 @@ void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 		config.default_gateway = QString::fromStdWString(adapter.configuration.defaultGateways[0]);
 	}
 	Win32NetworkConfig::DnsConfig dns = m->netconfig->query_DNS_server(adapter.configuration);
-	config.obtain_dns_server_address_automatically = dns.ipv4.preferredDnsServer.empty();
+	config.obtain_dns_server_address_automatically = dns.obtainAutomatically;
 	config.preferred_dns_server = QString::fromStdWString(dns.ipv4.preferredDnsServer);
 	config.alternate_dns_server = QString::fromStdWString(dns.ipv4.alternateDnsServer);
 
@@ -134,10 +134,20 @@ void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 		std::wstring ip = new_config.ip_address.toStdWString();
 		std::wstring subnet = new_config.subnet_mask.toStdWString();
 		std::wstring gateway = new_config.default_gateway.toStdWString();
+		Win32NetworkConfig::DnsConfig dns;
+		dns.obtainAutomatically = new_config.obtain_dns_server_address_automatically;
+		dns.ipv4.preferredDnsServer = new_config.preferred_dns_server.toStdWString();
+		dns.ipv4.alternateDnsServer = new_config.alternate_dns_server.toStdWString();
 
 		bool success = m->netconfig->change_address(mac, ip, subnet, gateway);
 		if (!success) {
 			QMessageBox::critical(this, "Error", "Failed to change IP address.");
+			return;
+		}
+
+		success = m->netconfig->change_DNS_server(mac, dns);
+		if (!success) {
+			QMessageBox::critical(this, "Error", "Failed to change DNS server.");
 		} else {
 			QMessageBox::information(this, "Success", "IP address changed successfully.");
 			reloadAdapters();
