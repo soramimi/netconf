@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>438</width>
-    <height>493</height>
+    <height>410</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -291,5 +291,38 @@
   <tabstop>pushButton_2</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>InterfaceConfigDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>270</x>
+     <y>462</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>240</x>
+     <y>463</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>InterfaceConfigDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>372</x>
+     <y>473</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>339</x>
+     <y>472</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
