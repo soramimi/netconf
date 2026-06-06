@@ -1,9 +1,9 @@
-#include "InterfaceCongifDialog.h"
-#include "ui_InterfaceCongifDialog.h"
+#include "InterfaceConfigDialog.h"
+#include "ui_InterfaceConfigDialog.h"
 
-InterfaceCongifDialog::InterfaceCongifDialog(const Config &config, QWidget *parent)
+InterfaceConfigDialog::InterfaceConfigDialog(Config const &config, QWidget *parent)
 	: QDialog(parent)
-	, ui(new Ui::InterfaceCongifDialog)
+	, ui(new Ui::InterfaceConfigDialog)
 	, config_(config)
 {
 	ui->setupUi(this);
@@ -17,17 +17,17 @@ InterfaceCongifDialog::InterfaceCongifDialog(const Config &config, QWidget *pare
 	exchange(false);
 }
 
-InterfaceCongifDialog::~InterfaceCongifDialog()
+InterfaceConfigDialog::~InterfaceConfigDialog()
 {
 	delete ui;
 }
 
-const InterfaceCongifDialog::Config &InterfaceCongifDialog::config() const
+InterfaceConfigDialog::Config const &InterfaceConfigDialog::config() const
 {
 	return config_;
 }
 
-void InterfaceCongifDialog::exchange(bool save)
+void InterfaceConfigDialog::exchange(bool save)
 {
 	if (save) {
 		config_.obtain_an_ip_address_automatically = ui->radioButton_obtain_an_ip_address_automatically->isChecked();
@@ -54,7 +54,7 @@ void InterfaceCongifDialog::exchange(bool save)
 	}
 }
 
-void InterfaceCongifDialog::done(int status)
+void InterfaceConfigDialog::done(int status)
 {
 	if (status == QDialog::Accepted) {
 		exchange(true);
@@ -62,7 +62,7 @@ void InterfaceCongifDialog::done(int status)
 	QDialog::done(status);
 }
 
-void InterfaceCongifDialog::reflectUI()
+void InterfaceConfigDialog::reflectUI()
 {
 	if (ui->radioButton_obtain_an_ip_address_automatically->isChecked()) {
 		ui->radioButton_obtain_dns_server_address_automatically->setEnabled(true);
@@ -86,26 +86,22 @@ void InterfaceCongifDialog::reflectUI()
 	}
 }
 
-void InterfaceCongifDialog::on_radioButton_obtain_an_ip_address_automatically_clicked()
+void InterfaceConfigDialog::on_radioButton_obtain_an_ip_address_automatically_clicked()
 {
 	reflectUI();
 }
 
-
-void InterfaceCongifDialog::on_radioButton_use_the_following_ip_address_clicked()
+void InterfaceConfigDialog::on_radioButton_use_the_following_ip_address_clicked()
 {
 	reflectUI();
 }
 
-void InterfaceCongifDialog::on_radioButton_obtain_dns_server_address_automatically_clicked()
+void InterfaceConfigDialog::on_radioButton_obtain_dns_server_address_automatically_clicked()
 {
 	reflectUI();
 }
 
-void InterfaceCongifDialog::on_radioButton_use_the_following_dns_server_address_clicked()
+void InterfaceConfigDialog::on_radioButton_use_the_following_dns_server_address_clicked()
 {
 	reflectUI();
 }
-
-
-

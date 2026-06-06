@@ -1,7 +1,7 @@
 #include "MainWindow.h"
-#include "ui_MainWindow.h"
+#include "InterfaceConfigDialog.h"
 #include "Win32NetworkConfig.h"
-#include "InterfaceCongifDialog.h"
+#include "ui_MainWindow.h"
 
 #include <QMessageBox>
 
@@ -9,6 +9,7 @@ struct MainWindow::Private {
 	std::shared_ptr<Win32NetworkConfig> netconfig;
 	std::map<std::wstring, Win32NetworkConfig::AdapterConfiguration> configurations;
 	std::vector<Win32NetworkConfig::MsftNetAdapter> adapters;
+	bool opened = false;
 };
 
 MainWindow::MainWindow(QWidget *parent)
@@ -22,6 +23,13 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+	if (m) {
+		if (m->netconfig) {
+			m->netconfig->close();
+		}
+		delete m;
+		m = nullptr;
+	}
 	delete ui;
 }
 
@@ -29,15 +37,18 @@ void MainWindow::show()
 {
 	QMainWindow::show();
 
-	if (!m->netconfig->open()) {
+	if (!m->opened && !m->netconfig->open()) {
 		QMessageBox::critical(this, "Error", "Failed to open network configuration.");
+		return;
 	}
+	m->opened = true;
 
 	QStringList columns = {
 		"Name",
 		"IP Addresses",
 		"Subnets",
 		"Default Gateways",
+		"DNS Servers",
 		"DHCP Enabled",
 		"MAC Address",
 		"Description",
@@ -49,13 +60,18 @@ void MainWindow::show()
 	ui->tableWidget->setColumnCount(columns.size());
 	ui->tableWidget->setHorizontalHeaderLabels(columns);
 
+	reloadAdapters();
+}
+
+void MainWindow::reloadAdapters()
+{
 	m->configurations = m->netconfig->query_Win32_NetworkAdapterConfiguration();
 	m->adapters = m->netconfig->query_MSFT_NetAdapter(m->configurations);
-	std::sort(m->adapters.begin(), m->adapters.end(), [](const Win32NetworkConfig::MsftNetAdapter &a, const Win32NetworkConfig::MsftNetAdapter &b) {
+	std::sort(m->adapters.begin(), m->adapters.end(), [](Win32NetworkConfig::MsftNetAdapter const &a, Win32NetworkConfig::MsftNetAdapter const &b) {
 		return a.name < b.name;
 	});
 
-	auto join = [&](std::vector<std::wstring> const &list, std::wstring const &sep)-> std::wstring {
+	auto join = [&](std::vector<std::wstring> const &list, std::wstring const &sep) -> std::wstring {
 		std::wstring result;
 		for (size_t i = 0; i < list.size(); ++i) {
 			if (i > 0) result += sep;
@@ -66,8 +82,8 @@ void MainWindow::show()
 
 	ui->tableWidget->setRowCount(static_cast<int>(m->adapters.size()));
 	for (size_t i = 0; i < m->adapters.size(); ++i) {
-		const auto &adapter = m->adapters[i];
-		const auto &config = adapter.configuration;
+		auto const &adapter = m->adapters[i];
+		auto const &config = adapter.configuration;
 
 		int col = 0;
 		ui->tableWidget->setItem(int(i), col++, new QTableWidgetItem(QString::fromStdWString(adapter.name)));
@@ -81,6 +97,7 @@ void MainWindow::show()
 		ui->tableWidget->setItem(int(i), col++, new QTableWidgetItem(ipaddr));
 		ui->tableWidget->setItem(int(i), col++, new QTableWidgetItem(QString::fromStdWString(join(config.subnets, L", "))));
 		ui->tableWidget->setItem(int(i), col++, new QTableWidgetItem(QString::fromStdWString(join(config.defaultGateways, L", "))));
+		ui->tableWidget->setItem(int(i), col++, new QTableWidgetItem(QString::fromStdWString(join(config.dnsServers, L", "))));
 		ui->tableWidget->setItem(int(i), col++, new QTableWidgetItem(config.dhcpEnabled ? "Yes" : "No"));
 		ui->tableWidget->setItem(int(i), col++, new QTableWidgetItem(QString::fromStdWString(config.macAddress)));
 		ui->tableWidget->setItem(int(i), col++, new QTableWidgetItem(QString::fromStdWString(config.description)));
@@ -92,9 +109,9 @@ void MainWindow::show()
 
 void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 {
-	InterfaceCongifDialog::Config config;
+	InterfaceConfigDialog::Config config;
 	int row = item->row();
-	const auto &adapter = m->adapters[row];
+	auto const &adapter = m->adapters[row];
 	config.obtain_an_ip_address_automatically = adapter.configuration.dhcpEnabled;
 	if (!adapter.configuration.ipAddresses.empty()) {
 		config.ip_address = QString::fromStdWString(adapter.configuration.ipAddresses[0]);
@@ -105,10 +122,14 @@ void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 	if (!adapter.configuration.defaultGateways.empty()) {
 		config.default_gateway = QString::fromStdWString(adapter.configuration.defaultGateways[0]);
 	}
+	Win32NetworkConfig::DnsConfig dns = m->netconfig->query_DNS_server(adapter.configuration);
+	config.obtain_dns_server_address_automatically = dns.ipv4.preferredDnsServer.empty();
+	config.preferred_dns_server = QString::fromStdWString(dns.ipv4.preferredDnsServer);
+	config.alternate_dns_server = QString::fromStdWString(dns.ipv4.alternateDnsServer);
 
-	InterfaceCongifDialog dlg(config, this);
+	InterfaceConfigDialog dlg(config, this);
 	if (dlg.exec() == QDialog::Accepted) {
-		const auto &new_config = dlg.config();
+		auto const &new_config = dlg.config();
 		std::wstring mac = adapter.configuration.macAddress;
 		std::wstring ip = new_config.ip_address.toStdWString();
 		std::wstring subnet = new_config.subnet_mask.toStdWString();
@@ -119,9 +140,7 @@ void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 			QMessageBox::critical(this, "Error", "Failed to change IP address.");
 		} else {
 			QMessageBox::information(this, "Success", "IP address changed successfully.");
-			show();
+			reloadAdapters();
 		}
 	}
-
 }
-

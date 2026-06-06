@@ -20,12 +20,12 @@ private:
 	struct Private;
 	Private *m;
 
-
 public:
 	explicit MainWindow(QWidget *parent = nullptr);
 	~MainWindow();
 
 	void show();
+	void reloadAdapters();
 private slots:
 	void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 };

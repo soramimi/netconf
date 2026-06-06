@@ -3,6 +3,7 @@
 #define _WIN32_DCOM
 #include <Wbemidl.h>
 #include <comdef.h>
+#include <cstdlib>
 #include <cwctype>
 #include <iostream>
 #include <map>
@@ -17,7 +18,7 @@ std::wstring normalizeGuid(std::wstring value)
 	return value;
 }
 
-std::wstring getStringProperty(IWbemClassObject *pclsObj, const wchar_t *name)
+std::wstring getStringProperty(IWbemClassObject *pclsObj, wchar_t const *name)
 {
 	VARIANT vtProp;
 	VariantInit(&vtProp);
@@ -30,7 +31,7 @@ std::wstring getStringProperty(IWbemClassObject *pclsObj, const wchar_t *name)
 	return value;
 }
 
-ULONG getUInt32Property(IWbemClassObject *pclsObj, const wchar_t *name)
+ULONG getUInt32Property(IWbemClassObject *pclsObj, wchar_t const *name)
 {
 	VARIANT vtProp;
 	VariantInit(&vtProp);
@@ -58,7 +59,7 @@ ULONG getUInt32Property(IWbemClassObject *pclsObj, const wchar_t *name)
 	return value;
 }
 
-bool getBoolProperty(IWbemClassObject *pclsObj, const wchar_t *name)
+bool getBoolProperty(IWbemClassObject *pclsObj, wchar_t const *name)
 {
 	VARIANT vtProp;
 	VariantInit(&vtProp);
@@ -71,7 +72,7 @@ bool getBoolProperty(IWbemClassObject *pclsObj, const wchar_t *name)
 	return value;
 }
 
-bool getUInt64Property(IWbemClassObject *pclsObj, const wchar_t *name, ULONGLONG &value)
+bool getUInt64Property(IWbemClassObject *pclsObj, wchar_t const *name, ULONGLONG &value)
 {
 	VARIANT vtProp;
 	VariantInit(&vtProp);
@@ -113,7 +114,7 @@ bool getUInt64Property(IWbemClassObject *pclsObj, const wchar_t *name, ULONGLONG
 	return found;
 }
 
-std::vector<std::wstring> getStringArrayProperty(IWbemClassObject *pclsObj, const wchar_t *name)
+std::vector<std::wstring> getStringArrayProperty(IWbemClassObject *pclsObj, wchar_t const *name)
 {
 	VARIANT vtProp;
 	VariantInit(&vtProp);
@@ -122,8 +123,7 @@ std::vector<std::wstring> getStringArrayProperty(IWbemClassObject *pclsObj, cons
 	if (SUCCEEDED(hr) && (vtProp.vt & VT_ARRAY) && vtProp.parray) {
 		LONG lower = 0;
 		LONG upper = -1;
-		if (SUCCEEDED(SafeArrayGetLBound(vtProp.parray, 1, &lower)) &&
-				SUCCEEDED(SafeArrayGetUBound(vtProp.parray, 1, &upper))) {
+		if (SUCCEEDED(SafeArrayGetLBound(vtProp.parray, 1, &lower)) && SUCCEEDED(SafeArrayGetUBound(vtProp.parray, 1, &upper))) {
 			for (LONG i = lower; i <= upper; ++i) {
 				BSTR item = nullptr;
 				if (SUCCEEDED(SafeArrayGetElement(vtProp.parray, &i, &item)) && item) {
@@ -137,7 +137,7 @@ std::vector<std::wstring> getStringArrayProperty(IWbemClassObject *pclsObj, cons
 	return values;
 }
 
-void printStringList(const wchar_t *label, const std::vector<std::wstring> &values)
+void printStringList(wchar_t const *label, std::vector<std::wstring> const &values)
 {
 	if (values.empty()) {
 		std::wcout << label << L": (null)" << std::endl;
@@ -148,7 +148,7 @@ void printStringList(const wchar_t *label, const std::vector<std::wstring> &valu
 	}
 }
 
-void printConfiguration(const Win32NetworkConfig::AdapterConfiguration &config)
+void printConfiguration(Win32NetworkConfig::AdapterConfiguration const &config)
 {
 	std::wcout << L"ConfigurationSettingID: " << config.settingId << std::endl;
 	std::wcout << L"ConfigurationIndex: " << config.index << std::endl;
@@ -163,14 +163,15 @@ void printConfiguration(const Win32NetworkConfig::AdapterConfiguration &config)
 	printStringList(L"ConfigurationIPAddress", config.ipAddresses);
 	printStringList(L"ConfigurationDefaultIPGateway", config.defaultGateways);
 	printStringList(L"ConfigurationIPSubnet", config.subnets);
+	printStringList(L"ConfigurationDNSServer", config.dnsServers);
 }
 
-void printStringProperty(const wchar_t *label, const std::wstring &value)
+void printStringProperty(wchar_t const *label, std::wstring const &value)
 {
 	std::wcout << label << L": " << (value.empty() ? L"(null)" : value) << std::endl;
 }
 
-void printUInt64Property(const wchar_t *label, ULONGLONG value, bool hasValue)
+void printUInt64Property(wchar_t const *label, ULONGLONG value, bool hasValue)
 {
 	std::wcout << label << L": ";
 	if (hasValue) {
@@ -181,7 +182,7 @@ void printUInt64Property(const wchar_t *label, ULONGLONG value, bool hasValue)
 	std::wcout << std::endl;
 }
 
-void printMsftNetAdapter(const Win32NetworkConfig::MsftNetAdapter &adapter)
+void printMsftNetAdapter(Win32NetworkConfig::MsftNetAdapter const &adapter)
 {
 	printStringProperty(L"Name", adapter.name);
 	printStringProperty(L"InterfaceDescription", adapter.interfaceDescription);
@@ -204,7 +205,7 @@ void printMsftNetAdapter(const Win32NetworkConfig::MsftNetAdapter &adapter)
 	}
 }
 
-void printArrayProperty(IWbemClassObject *pclsObj, const wchar_t *name)
+void printArrayProperty(IWbemClassObject *pclsObj, wchar_t const *name)
 {
 	VARIANT vtProp;
 	VariantInit(&vtProp);
@@ -224,7 +225,7 @@ void printArrayProperty(IWbemClassObject *pclsObj, const wchar_t *name)
 	VariantClear(&vtProp);
 }
 
-void printProperty(IWbemClassObject *pclsObj, const wchar_t *propName)
+void printProperty(IWbemClassObject *pclsObj, wchar_t const *propName)
 {
 	VARIANT vtProp;
 	VariantInit(&vtProp);
@@ -301,7 +302,7 @@ HRESULT extractReturnValue(IWbemClassObject *pOutParams)
 	return hr;
 }
 
-void reportMethodError(HRESULT hr, const wchar_t *methodName)
+void reportMethodError(HRESULT hr, wchar_t const *methodName)
 {
 	std::wcerr << methodName << L" failed. Error code = 0x" << std::hex << hr << std::endl;
 	if (hr == E_ACCESSDENIED) {
@@ -319,8 +320,8 @@ struct Win32NetworkConfig::Private {
 	IWbemServices *pSvc = nullptr;
 	IWbemServices *pStdSvc = nullptr;
 
-	bool connectNamespace(const wchar_t *namespacePath, IWbemServices **service);
-	static SAFEARRAY *createStringSafeArray(const std::vector<std::wstring> &strings);
+	bool connectNamespace(wchar_t const *namespacePath, IWbemServices **service);
+	static SAFEARRAY *createStringSafeArray(std::vector<std::wstring> const &strings);
 	HRESULT callEnableStatic(BSTR objPath, std::wstring const &ip, std::wstring const &subnet);
 	HRESULT callSetGateways(BSTR objPath, std::wstring const &gateway);
 
@@ -329,11 +330,11 @@ struct Win32NetworkConfig::Private {
 		IEnumWbemClassObject *pEnumerator = nullptr;
 		if (!service) return;
 		HRESULT hres = service->ExecQuery(
-					bstr_t("WQL"),
-					bstr_t(wql),
-					WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-					NULL,
-					&pEnumerator);
+			bstr_t("WQL"),
+			bstr_t(wql),
+			WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+			NULL,
+			&pEnumerator);
 		if (FAILED(hres)) {
 			std::cerr << "ExecQuery failed. Error code = 0x" << std::hex << hres << std::endl;
 			return;
@@ -354,34 +355,33 @@ struct Win32NetworkConfig::Private {
 	{
 		enumerate<Func>(pSvc, wql, callback);
 	}
-
 };
 
-bool Win32NetworkConfig::Private::connectNamespace(const wchar_t *namespacePath, IWbemServices **service)
+bool Win32NetworkConfig::Private::connectNamespace(wchar_t const *namespacePath, IWbemServices **service)
 {
 	HRESULT hres = pLoc->ConnectServer(
-				_bstr_t(namespacePath),
-				NULL,
-				NULL,
-				0,
-				NULL,
-				0,
-				0,
-				service);
+		_bstr_t(namespacePath),
+		NULL,
+		NULL,
+		0,
+		NULL,
+		0,
+		0,
+		service);
 	if (FAILED(hres)) {
 		std::wcerr << L"ConnectServer(" << namespacePath << L") failed. Error code = 0x" << std::hex << hres << std::endl;
 		return false;
 	}
 
 	hres = CoSetProxyBlanket(
-				*service,
-				RPC_C_AUTHN_WINNT,
-				RPC_C_AUTHZ_NONE,
-				NULL,
-				RPC_C_AUTHN_LEVEL_CALL,
-				RPC_C_IMP_LEVEL_IMPERSONATE,
-				NULL,
-				EOAC_NONE);
+		*service,
+		RPC_C_AUTHN_WINNT,
+		RPC_C_AUTHZ_NONE,
+		NULL,
+		RPC_C_AUTHN_LEVEL_CALL,
+		RPC_C_IMP_LEVEL_IMPERSONATE,
+		NULL,
+		EOAC_NONE);
 	if (FAILED(hres)) {
 		std::wcerr << L"CoSetProxyBlanket(" << namespacePath << L") failed. Error code = 0x" << std::hex << hres << std::endl;
 		(*service)->Release();
@@ -392,7 +392,7 @@ bool Win32NetworkConfig::Private::connectNamespace(const wchar_t *namespacePath,
 	return true;
 }
 
-SAFEARRAY *Win32NetworkConfig::Private::createStringSafeArray(const std::vector<std::wstring> &strings)
+SAFEARRAY *Win32NetworkConfig::Private::createStringSafeArray(std::vector<std::wstring> const &strings)
 {
 	SAFEARRAYBOUND sab;
 	sab.lLbound = 0;
@@ -407,7 +407,7 @@ SAFEARRAY *Win32NetworkConfig::Private::createStringSafeArray(const std::vector<
 	return psa;
 }
 
-HRESULT Win32NetworkConfig::Private::callEnableStatic(BSTR objPath, const std::wstring &ip, const std::wstring &subnet)
+HRESULT Win32NetworkConfig::Private::callEnableStatic(BSTR objPath, std::wstring const &ip, std::wstring const &subnet)
 {
 	IWbemClassObject *pClass = nullptr;
 	HRESULT hr = pSvc->GetObject(bstr_t("Win32_NetworkAdapterConfiguration"), 0, NULL, &pClass, NULL);
@@ -462,7 +462,7 @@ HRESULT Win32NetworkConfig::Private::callEnableStatic(BSTR objPath, const std::w
 	return hr;
 }
 
-HRESULT Win32NetworkConfig::Private::callSetGateways(BSTR objPath, const std::wstring &gateway)
+HRESULT Win32NetworkConfig::Private::callSetGateways(BSTR objPath, std::wstring const &gateway)
 {
 	IWbemClassObject *pClass = nullptr;
 	HRESULT hr = pSvc->GetObject(bstr_t("Win32_NetworkAdapterConfiguration"), 0, NULL, &pClass, NULL);
@@ -508,7 +508,6 @@ HRESULT Win32NetworkConfig::Private::callSetGateways(BSTR objPath, const std::ws
 Win32NetworkConfig::Win32NetworkConfig()
 	: m(new Private)
 {
-
 }
 
 Win32NetworkConfig::~Win32NetworkConfig()
@@ -521,15 +520,15 @@ bool Win32NetworkConfig::open()
 {
 	HRESULT hres;
 	hres = CoInitializeSecurity(
-				NULL,
-				-1,
-				NULL,
-				NULL,
-				RPC_C_AUTHN_LEVEL_DEFAULT,
-				RPC_C_IMP_LEVEL_IMPERSONATE,
-				NULL,
-				EOAC_NONE,
-				NULL);
+		NULL,
+		-1,
+		NULL,
+		NULL,
+		RPC_C_AUTHN_LEVEL_DEFAULT,
+		RPC_C_IMP_LEVEL_IMPERSONATE,
+		NULL,
+		EOAC_NONE,
+		NULL);
 	if (FAILED(hres) && hres != RPC_E_TOO_LATE) {
 		std::cerr << "CoInitializeSecurity failed. Error code = 0x" << std::hex << hres << std::endl;
 		CoUninitialize();
@@ -537,11 +536,11 @@ bool Win32NetworkConfig::open()
 	}
 
 	hres = CoCreateInstance(
-				CLSID_WbemLocator,
-				0,
-				CLSCTX_INPROC_SERVER,
-				IID_IWbemLocator,
-				(LPVOID *)&m->pLoc);
+		CLSID_WbemLocator,
+		0,
+		CLSCTX_INPROC_SERVER,
+		IID_IWbemLocator,
+		(LPVOID *)&m->pLoc);
 	if (FAILED(hres)) {
 		std::cerr << "CoCreateInstance(WbemLocator) failed. Error code = 0x" << std::hex << hres << std::endl;
 		CoUninitialize();
@@ -581,21 +580,22 @@ std::map<std::wstring, Win32NetworkConfig::AdapterConfiguration> Win32NetworkCon
 {
 	std::map<std::wstring, AdapterConfiguration> configurations;
 	m->enumerate(L"SELECT * FROM Win32_NetworkAdapterConfiguration",
-			  [&](IWbemClassObject *pclsObj) {
-		AdapterConfiguration config;
-		config.settingId = getStringProperty(pclsObj, L"SettingID");
-		config.index = getUInt32Property(pclsObj, L"Index");
-		config.interfaceIndex = getUInt32Property(pclsObj, L"InterfaceIndex");
-		config.macAddress = getStringProperty(pclsObj, L"MACAddress");
-		config.ipAddresses = getStringArrayProperty(pclsObj, L"IPAddress");
-		config.defaultGateways = getStringArrayProperty(pclsObj, L"DefaultIPGateway");
-		config.subnets = getStringArrayProperty(pclsObj, L"IPSubnet");
-		config.description = getStringProperty(pclsObj, L"Description");
-		config.dhcpEnabled = getBoolProperty(pclsObj, L"DHCPEnabled");
-		if (!config.settingId.empty()) {
-			configurations[normalizeGuid(config.settingId)] = config;
-		}
-	});
+		[&](IWbemClassObject *pclsObj) {
+			AdapterConfiguration config;
+			config.settingId = getStringProperty(pclsObj, L"SettingID");
+			config.index = getUInt32Property(pclsObj, L"Index");
+			config.interfaceIndex = getUInt32Property(pclsObj, L"InterfaceIndex");
+			config.macAddress = getStringProperty(pclsObj, L"MACAddress");
+			config.ipAddresses = getStringArrayProperty(pclsObj, L"IPAddress");
+			config.defaultGateways = getStringArrayProperty(pclsObj, L"DefaultIPGateway");
+			config.subnets = getStringArrayProperty(pclsObj, L"IPSubnet");
+			config.dnsServers = getStringArrayProperty(pclsObj, L"DNSServerSearchOrder");
+			config.description = getStringProperty(pclsObj, L"Description");
+			config.dhcpEnabled = getBoolProperty(pclsObj, L"DHCPEnabled");
+			if (!config.settingId.empty()) {
+				configurations[normalizeGuid(config.settingId)] = config;
+			}
+		});
 	return configurations;
 }
 
@@ -603,32 +603,44 @@ std::vector<Win32NetworkConfig::MsftNetAdapter> Win32NetworkConfig::query_MSFT_N
 {
 	std::vector<MsftNetAdapter> netadapters;
 	m->enumerate(m->pStdSvc, L"SELECT * FROM MSFT_NetAdapter",
-			  [&](IWbemClassObject *pclsObj) {
-		MsftNetAdapter adapter;
-		adapter.name = getStringProperty(pclsObj, L"Name");
-		adapter.interfaceDescription = getStringProperty(pclsObj, L"InterfaceDescription");
-		adapter.interfaceGuid = getStringProperty(pclsObj, L"InterfaceGuid");
-		adapter.interfaceIndex = getUInt32Property(pclsObj, L"InterfaceIndex");
-		adapter.status = getStringProperty(pclsObj, L"Status");
-		adapter.mediaConnectState = getUInt32Property(pclsObj, L"MediaConnectState");
-		adapter.hardwareInterface = getBoolProperty(pclsObj, L"HardwareInterface");
-		adapter.virtualAdapter = getBoolProperty(pclsObj, L"Virtual");
-		adapter.hidden = getBoolProperty(pclsObj, L"Hidden");
-		adapter.connectorPresent = getBoolProperty(pclsObj, L"ConnectorPresent");
-		adapter.permanentAddress = getStringProperty(pclsObj, L"PermanentAddress");
-		adapter.hasReceiveLinkSpeed = getUInt64Property(pclsObj, L"ReceiveLinkSpeed", adapter.receiveLinkSpeed);
-		adapter.hasTransmitLinkSpeed = getUInt64Property(pclsObj, L"TransmitLinkSpeed", adapter.transmitLinkSpeed);
-		adapter.pnpDeviceId = getStringProperty(pclsObj, L"PnPDeviceID");
+		[&](IWbemClassObject *pclsObj) {
+			MsftNetAdapter adapter;
+			adapter.name = getStringProperty(pclsObj, L"Name");
+			adapter.interfaceDescription = getStringProperty(pclsObj, L"InterfaceDescription");
+			adapter.interfaceGuid = getStringProperty(pclsObj, L"InterfaceGuid");
+			adapter.interfaceIndex = getUInt32Property(pclsObj, L"InterfaceIndex");
+			adapter.status = getStringProperty(pclsObj, L"Status");
+			adapter.mediaConnectState = getUInt32Property(pclsObj, L"MediaConnectState");
+			adapter.hardwareInterface = getBoolProperty(pclsObj, L"HardwareInterface");
+			adapter.virtualAdapter = getBoolProperty(pclsObj, L"Virtual");
+			adapter.hidden = getBoolProperty(pclsObj, L"Hidden");
+			adapter.connectorPresent = getBoolProperty(pclsObj, L"ConnectorPresent");
+			adapter.permanentAddress = getStringProperty(pclsObj, L"PermanentAddress");
+			adapter.hasReceiveLinkSpeed = getUInt64Property(pclsObj, L"ReceiveLinkSpeed", adapter.receiveLinkSpeed);
+			adapter.hasTransmitLinkSpeed = getUInt64Property(pclsObj, L"TransmitLinkSpeed", adapter.transmitLinkSpeed);
+			adapter.pnpDeviceId = getStringProperty(pclsObj, L"PnPDeviceID");
 
-		auto config = configurations.find(normalizeGuid(adapter.interfaceGuid));
-		if (config != configurations.end()) {
-			adapter.hasConfiguration = true;
-			adapter.configuration = config->second;
-		}
+			auto config = configurations.find(normalizeGuid(adapter.interfaceGuid));
+			if (config != configurations.end()) {
+				adapter.hasConfiguration = true;
+				adapter.configuration = config->second;
+			}
 
-		netadapters.push_back(adapter);
-	});
+			netadapters.push_back(adapter);
+		});
 	return netadapters;
+}
+
+Win32NetworkConfig::DnsConfig Win32NetworkConfig::query_DNS_server(AdapterConfiguration const &configuration) const
+{
+	DnsConfig dns;
+	if (!configuration.dnsServers.empty()) {
+		dns.ipv4.preferredDnsServer = configuration.dnsServers[0];
+	}
+	if (configuration.dnsServers.size() > 1) {
+		dns.ipv4.alternateDnsServer = configuration.dnsServers[1];
+	}
+	return dns;
 }
 
 void Win32NetworkConfig::list_interfaces()
@@ -643,7 +655,7 @@ void Win32NetworkConfig::list_interfaces()
 	}
 }
 
-bool Win32NetworkConfig::change_address(const std::wstring &mac, const std::wstring &ip, const std::wstring &subnet, const std::wstring &gateway)
+bool Win32NetworkConfig::change_address(std::wstring const &mac, std::wstring const &ip, std::wstring const &subnet, std::wstring const &gateway)
 {
 	std::wstring query = L"SELECT * FROM Win32_NetworkAdapterConfiguration WHERE MACAddress = '" + mac + L"'";
 	bool found = false;
@@ -679,6 +691,3 @@ bool Win32NetworkConfig::change_address(const std::wstring &mac, const std::wstr
 	}
 	return found;
 }
-
-
-

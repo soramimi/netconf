@@ -1,14 +1,16 @@
-#ifndef INTERFACECONGIFDIALOG_H
-#define INTERFACECONGIFDIALOG_H
+#ifndef INTERFACECONFIGDIALOG_H
+#define INTERFACECONFIGDIALOG_H
+
+#include "Win32NetworkConfig.h"
 
 #include <QButtonGroup>
 #include <QDialog>
 
 namespace Ui {
-class InterfaceCongifDialog;
+class InterfaceConfigDialog;
 }
 
-class InterfaceCongifDialog : public QDialog {
+class InterfaceConfigDialog : public QDialog {
 	Q_OBJECT
 public:
 	struct Config {
@@ -21,8 +23,9 @@ public:
 		QString preferred_dns_server;
 		QString alternate_dns_server;
 	};
+
 private:
-	Ui::InterfaceCongifDialog *ui;
+	Ui::InterfaceConfigDialog *ui;
 	Config config_ = {};
 
 	QButtonGroup a_;
@@ -30,9 +33,10 @@ private:
 
 	void exchange(bool save);
 	void reflectUI();
+
 public:
-	explicit InterfaceCongifDialog(Config const &config, QWidget *parent = nullptr);
-	~InterfaceCongifDialog();
+	explicit InterfaceConfigDialog(Config const &config, QWidget *parent = nullptr);
+	~InterfaceConfigDialog();
 
 	Config const &config() const;
 
@@ -48,4 +52,4 @@ public slots:
 	void done(int);
 };
 
-#endif // INTERFACECONGIFDIALOG_H
+#endif // INTERFACECONFIGDIALOG_H

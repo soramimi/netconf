@@ -1,13 +1,12 @@
 #ifndef WIN32NETWORKCONFIG_H
 #define WIN32NETWORKCONFIG_H
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 class Win32NetworkConfig {
 public:
-
 	struct AdapterConfiguration {
 		std::wstring settingId;
 		unsigned long index = 0;
@@ -16,6 +15,7 @@ public:
 		std::vector<std::wstring> ipAddresses;
 		std::vector<std::wstring> defaultGateways;
 		std::vector<std::wstring> subnets;
+		std::vector<std::wstring> dnsServers;
 		std::wstring description;
 		bool dhcpEnabled = false;
 	};
@@ -51,13 +51,15 @@ public:
 private:
 	struct Private;
 	Private *m;
+
 public:
 	Win32NetworkConfig();
 	~Win32NetworkConfig();
 	bool open();
 	void close();
 	std::map<std::wstring, AdapterConfiguration> query_Win32_NetworkAdapterConfiguration();
-	std::vector<Win32NetworkConfig::MsftNetAdapter> query_MSFT_NetAdapter(const std::map<std::wstring, AdapterConfiguration> &configurations);
+	std::vector<Win32NetworkConfig::MsftNetAdapter> query_MSFT_NetAdapter(std::map<std::wstring, AdapterConfiguration> const &configurations);
+	DnsConfig query_DNS_server(AdapterConfiguration const &configuration) const;
 	void list_interfaces();
 	bool change_address(std::wstring const &mac, std::wstring const &ip, std::wstring const &subnet, std::wstring const &gateway);
 };
