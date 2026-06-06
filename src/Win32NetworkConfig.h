@@ -42,8 +42,10 @@ public:
 	};
 
 	struct DnsConfig {
-		std::wstring preferredDnsServer;
-		std::wstring alternateDnsServer;
+		struct {
+			std::wstring preferredDnsServer;
+			std::wstring alternateDnsServer;
+		} ipv4;
 	};
 
 private:

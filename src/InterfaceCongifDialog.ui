@@ -7,26 +7,30 @@
     <x>0</x>
     <y>0</y>
     <width>438</width>
-    <height>352</height>
+    <height>493</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
-    <widget class="QRadioButton" name="radioButton_obtain_an_ipaddress_automatically">
-     <property name="text">
-      <string>Obtain an IP address automatically</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QRadioButton" name="radioButton_use_the_following_ip_address">
-     <property name="text">
-      <string>Use the following IP address:</string>
-     </property>
-    </widget>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QRadioButton" name="radioButton_obtain_an_ip_address_automatically">
+       <property name="text">
+        <string>Obtain an IP address automatically</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButton_use_the_following_ip_address">
+       <property name="text">
+        <string>Use the following IP address:</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QFrame" name="frame_ip_address">
@@ -128,18 +132,22 @@
     </widget>
    </item>
    <item>
-    <widget class="QRadioButton" name="radioButton_obtain_dns_server_address_automatically">
-     <property name="text">
-      <string>Obtain DNS server address automatically</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QRadioButton" name="radioButton_use_the_following_dns_server_address">
-     <property name="text">
-      <string>Use the following DNS server address:</string>
-     </property>
-    </widget>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QRadioButton" name="radioButton_obtain_dns_server_address_automatically">
+       <property name="text">
+        <string>Obtain DNS server address automatically</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="radioButton_use_the_following_dns_server_address">
+       <property name="text">
+        <string>Use the following DNS server address:</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <widget class="QFrame" name="frame_dns_server">
@@ -270,7 +278,7 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>radioButton_obtain_an_ipaddress_automatically</tabstop>
+  <tabstop>radioButton_obtain_an_ip_address_automatically</tabstop>
   <tabstop>radioButton_use_the_following_ip_address</tabstop>
   <tabstop>lineEdit_ip_address</tabstop>
   <tabstop>lineEdit_subnet_mask</tabstop>

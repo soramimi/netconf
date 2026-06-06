@@ -95,7 +95,7 @@ void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
 	InterfaceCongifDialog::Config config;
 	int row = item->row();
 	const auto &adapter = m->adapters[row];
-	config.obtain_an_ipaddress_automatically = adapter.configuration.dhcpEnabled;
+	config.obtain_an_ip_address_automatically = adapter.configuration.dhcpEnabled;
 	if (!adapter.configuration.ipAddresses.empty()) {
 		config.ip_address = QString::fromStdWString(adapter.configuration.ipAddresses[0]);
 	}
