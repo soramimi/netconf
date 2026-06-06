@@ -44,13 +44,13 @@ public:
 private:
 	struct Private;
 	Private *m;
-	std::map<std::wstring, AdapterConfiguration> query_Win32_NetworkAdapterConfiguration();
-	std::vector<Win32NetworkConfig::MsftNetAdapter> query_MSFT_NetAdapter(const std::map<std::wstring, AdapterConfiguration> &configurations);
 public:
 	Win32NetworkConfig();
 	~Win32NetworkConfig();
 	bool open();
 	void close();
+	std::map<std::wstring, AdapterConfiguration> query_Win32_NetworkAdapterConfiguration();
+	std::vector<Win32NetworkConfig::MsftNetAdapter> query_MSFT_NetAdapter(const std::map<std::wstring, AdapterConfiguration> &configurations);
 	void list_interfaces();
 	bool change_address(std::wstring const &mac, std::wstring const &ip, std::wstring const &subnet, std::wstring const &gateway);
 };

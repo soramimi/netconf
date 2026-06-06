@@ -1,4 +1,6 @@
+#include "MainWindow.h"
 #include "Win32NetworkConfig.h"
+#include <QApplication>
 
 #include <Windows.h>
 #include <iostream>
@@ -51,6 +53,9 @@ int main(int argc, char *argv[])
 
 	setupOutputLocale();
 
+	QApplication a(argc, argv);
+
+#if 0
 	Win32NetworkConfig nc;
 	if (!nc.open()) {
 		return 1;
@@ -77,8 +82,13 @@ int main(int argc, char *argv[])
 #endif
 
 	nc.close();
+#endif
+
+	MainWindow w;
+	w.show();
+	int ret = a.exec();
 
 	CoUninitialize();
 
-	return ok ? 0 : 1;
+	return ret;
 }
